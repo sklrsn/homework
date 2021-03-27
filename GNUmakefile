@@ -9,7 +9,7 @@ ARCH             = amd64
 export LAMBDA_EXECUTOR = docker
 export TMPDIR=/tmp
 
-.PHONY: all build package localstack env deploy clean
+.PHONY: all build package localstack env clean
 
 all: deps build package localstack env
 
@@ -32,7 +32,7 @@ localstack:
 	@echo "create Localstack environment ..."
 	@echo LAMBDA_EXECUTOR ...$(LAMBDA_EXECUTOR)
 	@echo TMPDIR ...$(TMPDIR)
-	@docker-compose up
+	@docker-compose up -d
 
 env:
 	aws --endpoint-url=http://localhost:4566 sqs list-queues
