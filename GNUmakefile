@@ -6,6 +6,8 @@ DESCRIPTION 	 = Parse SQS events and push it to Kinesis stream
 DISTRIBUTION	 = linux
 ARCH             = amd64
 
+export LAMBDA_EXECUTOR = docker
+
 .PHONY: all build package localstack env deploy clean
 
 all: deps build package localstack env
@@ -26,7 +28,7 @@ package:
 	zip ${EXECUTEABLE_NAME}.zip ${EXECUTEABLE_NAME}
 
 localstack:
-	@echo "create Localstack environment ..."
+	@echo "create Localstack environment ...$(LAMBDA_EXECUTOR)"
 	@docker-compose up
 
 env:
@@ -38,7 +40,7 @@ deploy:
 	@echo "deploy lambda ..."
 	aws lambda create-function --function-name preprocessor --runtime go1.x \
 	--zip-file fileb://preprocessor/dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME}.zip \
-	--handler main --endpoint-url=http://localhost:4566 \
+	--handler preprocessor --endpoint-url=http://localhost:4566 \
 	--role arn:aws:iam::skalai:role/execution_role
 
 clean:

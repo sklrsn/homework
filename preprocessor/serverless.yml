@@ -13,7 +13,7 @@ package:
   exclude:
     - ./**
   include:
-    - ./bin/**
+    - ./dist/linux/amd64/**
 
 custom:
   localstack:
@@ -27,7 +27,7 @@ custom:
 
 functions:
   preprocessor:
-    handler: bin/preprocessor
+    handler: dist/linux/amd64/preprocessor
     events:
       - http:
           path: hello
