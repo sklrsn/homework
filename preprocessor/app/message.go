@@ -1,6 +1,6 @@
 package app
 
-type Operation interface {
+type Message interface {
 	Read()
 	Write()
 	Delete()
