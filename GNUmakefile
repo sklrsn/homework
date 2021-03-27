@@ -21,7 +21,7 @@ deps:
 build:
 	@echo "compile binaries ..."
 	@cd preprocessor && \
-	env GOOS=${DISTRIBUTION} GOARCH=${ARCH} go build -ldflags="-s -w" -o dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME} .
+	GOOS=${DISTRIBUTION} GOARCH=${ARCH} go build -ldflags="-s -w" -o dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME} .
 
 package:
 	@echo "package binaries ..."
