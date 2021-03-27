@@ -19,6 +19,36 @@ const (
 	UTC = "2006-01-02T15:04:05.999999Z"
 )
 
+type Credentials struct {
+	AccessKey       string  `json:"access_key"`
+	SecretAccessKey string  `json:"secret_access_key"`
+	SessionToken    string  `json:"session_token"`
+	Region          string  `json:"region"`
+	EndPoint        *string `json:"end_point"`
+}
+
+func (c Credentials) String() string {
+	return ""
+}
+
+func NewAWSSession(creds Credentials) *session.Session {
+	cred := credentials.NewStaticCredentials(creds.AccessKey, creds.SecretAccessKey,
+		creds.SessionToken)
+	session, err := session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigDisable,
+		Config: aws.Config{
+			Region:      aws.String(creds.Region),
+			Credentials: cred,
+			Endpoint:    creds.EndPoint,
+			MaxRetries:  aws.Int(5),
+		},
+	})
+	if err != nil {
+		log.Fatalf("incorrect credentials%v", err)
+	}
+	return session
+}
+
 type App struct {
 	SQSClient     *SQSClient
 	KinesisClient *KinesisClient
@@ -110,34 +140,4 @@ func (app *App) PollSQS(QueueUrl string, messageBatchLimit int64) error {
 			}
 		}
 	}
-}
-
-type Credentials struct {
-	AccessKey       string  `json:"access_key"`
-	SecretAccessKey string  `json:"secret_access_key"`
-	SessionToken    string  `json:"session_token"`
-	Region          string  `json:"region"`
-	EndPoint        *string `json:"end_point"`
-}
-
-func (c Credentials) String() string {
-	return ""
-}
-
-func NewAWSSession(creds Credentials) *session.Session {
-	cred := credentials.NewStaticCredentials(creds.AccessKey, creds.SecretAccessKey,
-		creds.SessionToken)
-	session, err := session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigDisable,
-		Config: aws.Config{
-			Region:      aws.String(creds.Region),
-			Credentials: cred,
-			Endpoint:    creds.EndPoint,
-			MaxRetries:  aws.Int(5),
-		},
-	})
-	if err != nil {
-		log.Fatalf("incorrect credentials%v", err)
-	}
-	return session
 }
