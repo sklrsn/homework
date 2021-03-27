@@ -6,9 +6,9 @@ DESCRIPTION 	 = Parse SQS events and push it to Kinesis stream
 DISTRIBUTION	 = linux
 ARCH             = amd64
 
-.PHONY: all build package localstack
+.PHONY: all build package localstack env deploy clean
 
-all: deps build package localstack
+all: deps build package localstack env
 
 deps:
 	@echo "download dependencies ..."
@@ -18,16 +18,28 @@ deps:
 build:
 	@echo "compile binaries ..."
 	@cd preprocessor && \
-	GOOS=${DISTRIBUTION} GOARCH=${ARCH} go build -o dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME} .
+	env GOOS=${DISTRIBUTION} GOARCH=${ARCH} go build -ldflags="-s -w" -o dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME} .
 
 package:
 	@echo "package binaries ..."
-	@cd preprocessor && \
-	zip dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME}.zip dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME}
+	@cd preprocessor/dist/${DISTRIBUTION}/${ARCH} && \
+	zip ${EXECUTEABLE_NAME}.zip ${EXECUTEABLE_NAME}
 
 localstack:
 	@echo "create Localstack environment ..."
-	@docker-compose up -d
+	@docker-compose up
+
+env:
+	aws --endpoint-url=http://localhost:4566 sqs list-queues
+	aws --endpoint-url=http://localhost:4566 kinesis list-streams
+	aws --endpoint-url=http://localhost:4566 lambda list-functions
+
+deploy:
+	@echo "deploy lambda ..."
+	aws lambda create-function --function-name preprocessor --runtime go1.x \
+	--zip-file fileb://preprocessor/dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME}.zip \
+	--handler main --endpoint-url=http://localhost:4566 \
+	--role arn:aws:iam::skalai:role/execution_role
 
 clean:
 	@rm -rf vendor/

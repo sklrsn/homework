@@ -2,19 +2,23 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-func preprocess(ctx context.Context, event events.SQSEvent) error {
-	log.Println("************** SQS event Processing starts**************")
-	for _, message := range event.Records {
-		log.Println(message.MessageId)
-		log.Println(message.Body)
-	}
-	log.Println("************** SQS event Processing ends**************")
+func init() {
+	log.Println("************** Processing init starts**************")
+	fmt.Println(os.Getenv("AWS_ACCESS_KEY_ID"))
+	log.Println(os.Getenv("AWS_SECRET_ACCESS_KEY"))
+	log.Println("************** Processing init starts**************")
+}
+
+func preprocess(ctx context.Context) error {
+	log.Println("************** Processing starts**************")
+	log.Println("************** Processing ends**************")
 	return nil
 }
 
