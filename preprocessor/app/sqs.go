@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -12,27 +11,27 @@ type SQSClient struct {
 	sqs *sqs.SQS
 }
 
-func NewSQSClient(session *session.Session) *SQSClient {
+func NewSQSClient(session *session.Session) (*SQSClient, error) {
 	sqsClient := new(SQSClient)
-	sqsClient.initialize(session)
-	return sqsClient
+	return sqsClient, sqsClient.initialize(session)
 }
 
-func (s *SQSClient) initialize(session *session.Session) {
-	s.sqs = sqs.New(session)
-	if s.sqs == nil {
-		log.Fatal("failed to initialize SQS Handle")
+func (sc *SQSClient) initialize(session *session.Session) error {
+	sc.sqs = sqs.New(session)
+	if sc.sqs == nil {
+		return errors.New("failed to initialize SQS Handle")
 	}
+	return nil
 }
 
-func (s *SQSClient) Read(message *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
-	return s.sqs.ReceiveMessage(message)
+func (sc *SQSClient) Read(message *sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
+	return sc.sqs.ReceiveMessage(message)
 }
 
-func (s *SQSClient) Write(message *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
-	return s.sqs.SendMessage(message)
+func (sc *SQSClient) Write(message *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
+	return sc.sqs.SendMessage(message)
 }
 
-func (s *SQSClient) Delete() error {
+func (sc *SQSClient) Delete() error {
 	return errors.New("Not Implemented")
 }

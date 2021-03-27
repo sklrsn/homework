@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
@@ -12,27 +11,31 @@ type KinesisClient struct {
 	kinesisClient *kinesis.Kinesis
 }
 
-func NewKinesisClient(session *session.Session) *KinesisClient {
+func NewKinesisClient(session *session.Session) (*KinesisClient, error) {
 	kinesisClient := new(KinesisClient)
-	kinesisClient.initialize(session)
-	return kinesisClient
+	return kinesisClient, kinesisClient.initialize(session)
 }
 
-func (s *KinesisClient) initialize(session *session.Session) {
-	s.kinesisClient = kinesis.New(session)
-	if s.kinesisClient == nil {
-		log.Fatal("failed to initialize Kinesis handle")
+func (kc *KinesisClient) initialize(session *session.Session) error {
+	kc.kinesisClient = kinesis.New(session)
+	if kc.kinesisClient == nil {
+		return errors.New("failed to initialize Kinesis handle")
 	}
+	return nil
 }
 
-func (s *KinesisClient) Read() error {
+func (kc *KinesisClient) Read() error {
 	return errors.New("Not implemented")
 }
 
-func (s *KinesisClient) Write() {
-
+func (kc *KinesisClient) Write(record *kinesis.PutRecordInput) (*kinesis.PutRecordOutput, error) {
+	return kc.kinesisClient.PutRecord(record)
 }
 
-func (s *KinesisClient) Delete() error {
+func (kc *KinesisClient) WriteMultipleRecords(records *kinesis.PutRecordsInput) (*kinesis.PutRecordsOutput, error) {
+	return kc.kinesisClient.PutRecords(records)
+}
+
+func (kc *KinesisClient) Delete() error {
 	return errors.New("Not implemented")
 }

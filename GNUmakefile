@@ -32,7 +32,7 @@ localstack:
 	@echo "create Localstack environment ..."
 	@echo LAMBDA_EXECUTOR ...$(LAMBDA_EXECUTOR)
 	@echo TMPDIR ...$(TMPDIR)
-	@docker-compose up -d
+	@docker-compose up
 
 env:
 	aws --endpoint-url=http://localhost:4566 sqs list-queues

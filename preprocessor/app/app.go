@@ -14,15 +14,16 @@ type App struct {
 }
 
 func (a *App) Init(creds Credentials) {
+	var err error
 	session := NewAWSSession(creds)
 
-	a.SQSClient = NewSQSClient(session)
-	if a.SQSClient == nil {
+	a.SQSClient, err = NewSQSClient(session)
+	if err != nil {
 		log.Fatal("failed to create SQS client")
 	}
 
-	a.KinesisClient = NewKinesisClient(session)
-	if a.SQSClient == nil {
+	a.KinesisClient, err = NewKinesisClient(session)
+	if err != nil {
 		log.Fatal("failed to create Kinesis client")
 	}
 }
