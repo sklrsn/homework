@@ -4,8 +4,8 @@ services:
     container_name: sensor-fleet
     build: sensor-fleet
     environment: 
-      AWS_ACCESS_KEY_ID: some_key_id
-      AWS_SECRET_ACCESS_KEY: some_secret
+      AWS_ACCESS_KEY_ID: key_id
+      AWS_SECRET_ACCESS_KEY: secret
 
   localstack:
     container_name: "localstack"

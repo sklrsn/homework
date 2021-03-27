@@ -8,7 +8,12 @@ ARCH             = amd64
 
 .PHONY: all build package localstack
 
-all: build package localstack
+all: deps build package localstack
+
+deps:
+	@echo "download dependencies ..."
+	go mod vendor -v && \
+	go mod tidy
 
 build:
 	@echo "compile binaries ..."
@@ -25,6 +30,7 @@ localstack:
 	@docker-compose up -d
 
 clean:
+	@rm -rf vendor/
 	@rm -rf preprocessor/dist
 	@docker kill $$(docker ps -aq)
 	@docker rm $$(docker ps -aq)
