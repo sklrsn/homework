@@ -48,6 +48,7 @@ func NewAWSSession(creds Credentials) *session.Session {
 			Region:      aws.String(creds.Region),
 			Credentials: cred,
 			Endpoint:    creds.EndPoint,
+			MaxRetries:  aws.Int(5),
 		},
 	})
 	if err != nil {
