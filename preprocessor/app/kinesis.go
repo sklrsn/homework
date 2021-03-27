@@ -21,7 +21,7 @@ func NewKinesisClient(session *session.Session) *KinesisClient {
 func (s *KinesisClient) initialize(session *session.Session) {
 	s.kinesisClient = kinesis.New(session)
 	if s.kinesisClient == nil {
-		log.Fatal("failed to initialize SQS")
+		log.Fatal("failed to initialize Kinesis handle")
 	}
 }
 

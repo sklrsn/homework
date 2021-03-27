@@ -21,7 +21,7 @@ func NewSQSClient(session *session.Session) *SQSClient {
 func (s *SQSClient) initialize(session *session.Session) {
 	s.sqs = sqs.New(session)
 	if s.sqs == nil {
-		log.Fatal("failed to initialize SQS")
+		log.Fatal("failed to initialize SQS Handle")
 	}
 }
 
