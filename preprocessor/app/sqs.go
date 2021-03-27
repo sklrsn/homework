@@ -32,6 +32,6 @@ func (sc *SQSClient) Write(message *sqs.SendMessageInput) (*sqs.SendMessageOutpu
 	return sc.sqs.SendMessage(message)
 }
 
-func (sc *SQSClient) Delete() error {
-	return errors.New("Not Implemented")
+func (sc *SQSClient) Delete(deleteMessage *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+	return sc.sqs.DeleteMessage(deleteMessage)
 }

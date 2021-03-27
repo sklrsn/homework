@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kinesis"
@@ -17,6 +19,19 @@ const (
 	StreamName = "events"
 )
 
+func cleanUp() {
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGTERM, syscall.SIGKILL)
+
+	go func() {
+		sig := <-ch
+		log.Printf("Received signal %v", sig)
+
+		log.Println("exiting ...")
+		os.Exit(0)
+	}()
+}
+
 func main() {
 	setEnv()
 	fmt.Println("**************")
@@ -26,6 +41,7 @@ func main() {
 	fmt.Println(os.Getenv("region"))
 	fmt.Println(os.Getenv("stream_name"))
 	fmt.Println("**************")
+
 	endpoint := os.Getenv("end_point")
 	creds := app.Credentials{
 		AccessKey:       os.Getenv("access_key_id"),

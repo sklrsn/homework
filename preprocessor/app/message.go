@@ -7,10 +7,10 @@ type Operation interface {
 }
 
 type SQSMessage struct {
-	SubmissionID string  `json:"submission_id"`
-	DeviceID     string  `json:"device_id"`
-	TimeCreated  string  `json:"time_created"`
-	Events       []Event `json:"events"`
+	SubmissionID string `json:"submission_id"`
+	DeviceID     string `json:"device_id"`
+	TimeCreated  string `json:"time_created"`
+	Events       Event  `json:"events"`
 }
 
 type Event struct {
@@ -30,9 +30,9 @@ type NetworkConnection struct {
 }
 
 type KinesisRecord struct {
-	RecordID    string              `json:"id"`
-	DeviceID    string              `json:"device_id"`
-	Process     []Process           `json:"new_process"`
-	Connections []NetworkConnection `json:"network_connection"`
-	Created     string              `json:"created"`
+	RecordID           string              `json:"id"`
+	DeviceID           string              `json:"device_id"`
+	Processes          []Process           `json:"new_process"`
+	NetworkConnections []NetworkConnection `json:"network_connection"`
+	Created            string              `json:"created"`
 }
