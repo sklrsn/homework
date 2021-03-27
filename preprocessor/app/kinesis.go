@@ -19,7 +19,7 @@ func NewKinesisClient(session *session.Session) (*KinesisClient, error) {
 func (kc *KinesisClient) initialize(session *session.Session) error {
 	kc.kinesisClient = kinesis.New(session)
 	if kc.kinesisClient == nil {
-		return errors.New("failed to initialize Kinesis handle")
+		return errors.New("failed to initialize Kinesis")
 	}
 	return nil
 }
