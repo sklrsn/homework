@@ -7,6 +7,7 @@ DISTRIBUTION	 = linux
 ARCH             = amd64
 
 export LAMBDA_EXECUTOR = docker
+export TMPDIR=/tmp
 
 .PHONY: all build package localstack env deploy clean
 
@@ -28,7 +29,9 @@ package:
 	zip ${EXECUTEABLE_NAME}.zip ${EXECUTEABLE_NAME}
 
 localstack:
-	@echo "create Localstack environment ...$(LAMBDA_EXECUTOR)"
+	@echo "create Localstack environment ..."
+	@echo LAMBDA_EXECUTOR ...$(LAMBDA_EXECUTOR)
+	@echo TMPDIR ...$(TMPDIR)
 	@docker-compose up
 
 env:
