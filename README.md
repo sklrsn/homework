@@ -138,3 +138,59 @@ Kinesis Output
     "ShardId": "shardId-000000000001"
 }
 ```
+
+There is another solution where I have tried to deploy a lambda function to localstack.
+Lambda deployment and creation of event-source-mapping succeeds. But,
+for some reason, I couldn't get event-source-mapping working in localstack.
+```
+cd homework
+
+make clean
+
+make stack
+
+make serverless
+```
+
+```
+deploying lambda to localstack ...
+aws lambda create-function --function-name preprocessor --runtime go1.x \
+--zip-file fileb://preprocessor/dist/linux/amd64/preprocessor.zip \
+--handler preprocessor --endpoint-url=http://localhost:4566 \
+--role arn:aws:iam::kalai:role/execution_role
+{
+    "FunctionName": "preprocessor",
+    "FunctionArn": "arn:aws:lambda:us-east-1:000000000000:function:preprocessor",
+    "Runtime": "go1.x",
+    "Role": "arn:aws:iam::kalai:role/execution_role",
+    "Handler": "preprocessor",
+    "CodeSize": 3403253,
+    "Description": "",
+    "Timeout": 3,
+    "LastModified": "2021-03-28T21:23:58.729+0000",
+    "CodeSha256": "vyJBbvM9+bQxqzshXGp6zBqwryZDCtXKhRRQoMJ8+0M=",
+    "Version": "$LATEST",
+    "VpcConfig": {},
+    "TracingConfig": {
+        "Mode": "PassThrough"
+    },
+    "RevisionId": "d7d2d7d4-3b91-43a7-87a2-1ab6d2489b99",
+    "State": "Active",
+    "LastUpdateStatus": "Successful",
+    "PackageType": "Zip"
+}
+enable trigger to launch lambdas when message published to SQS...
+aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
+--event-source-arn arn:aws:sqs:eu-west-1:000000000000:submissions \
+--function-name preprocessor
+{
+    "UUID": "7809a537-bffb-4c84-b98a-4674e443fdd0",
+    "StartingPosition": "LATEST",
+    "BatchSize": 10,
+    "EventSourceArn": "arn:aws:sqs:eu-west-1:000000000000:submissions",
+    "FunctionArn": "arn:aws:lambda:us-east-1:000000000000:function:preprocessor",
+    "LastModified": 1616966639.0,
+    "LastProcessingResult": "OK",
+    "State": "Enabled",
+```
+

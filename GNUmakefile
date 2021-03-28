@@ -11,7 +11,7 @@ export TMPDIR=/tmp
 
 BUILDER_IMAGE	= builder:latest
 
-.PHONY: all compile run env clean builder lambda serverless build
+.PHONY: all compile run env clean builder lambda serverless build stack
 
 all: run env
 
@@ -47,10 +47,16 @@ package:
 	@echo "preprocessor.zip available at preprocessor/dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME}"
 
 run:
-	@echo "create localstack environment and launch application ..."
+	@echo "create localstack , sensor-fleet and preprocessor ..."
 	@echo LAMBDA_EXECUTOR ...$(LAMBDA_EXECUTOR)
 	@echo TMPDIR ...$(TMPDIR)
 	@docker-compose up --build
+
+stack:
+	@echo "create localstack and sensor-fleet environment ... (skip preprocessor)"
+	@echo LAMBDA_EXECUTOR ...$(LAMBDA_EXECUTOR)
+	@echo TMPDIR ...$(TMPDIR)
+	@docker-compose up --build --scale preprocessor=0
 
 env:
 	aws --endpoint-url=http://localhost:4566 sqs list-queues
