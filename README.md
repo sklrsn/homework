@@ -1,4 +1,4 @@
-# Homework aka Data Preprocessor
+# SQS and Kinesis
 
  Parse SQS events and push it to Kinesis stream
 ## Solution Environment

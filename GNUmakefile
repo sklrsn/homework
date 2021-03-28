@@ -62,12 +62,12 @@ lambda:
 	aws lambda create-function --function-name preprocessor --runtime go1.x \
 	--zip-file fileb://preprocessor/dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME}.zip \
 	--handler preprocessor --endpoint-url=http://localhost:4566 \
-	--role arn:aws:iam::skalai:role/execution_role
+	--role arn:aws:iam::kalai:role/execution_role
 
-	@echo "enable trigger to launch lambdas when message pulished to SQS..."
-	aws lambda create-event-source-mapping --function-name preprocessor \
-	--event-source-arn arn:aws:sqs:elasticmq:000000000000:submissions \
-	--endpoint-url=http://localhost:4566
+	@echo "enable trigger to launch lambdas when message published to SQS..."
+	aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
+	--event-source-arn arn:aws:sqs:eu-west-1:000000000000:submissions \
+	--function-name preprocessor
 
 serverless: builder build env lambda env
 
