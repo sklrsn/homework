@@ -32,7 +32,7 @@ func cleanUp(done chan bool) {
 }
 
 var (
-	pp = new(app.App)
+	Preprocessor = new(app.App)
 )
 
 func init() {
@@ -43,7 +43,7 @@ func init() {
 		Region:          os.Getenv("region"),
 		EndPoint:        &endpoint,
 	}
-	pp.Init(creds)
+	Preprocessor.Init(creds)
 
 	batch, err := strconv.Atoi(os.Getenv("sqs_messages_batch"))
 	if err != nil {
@@ -53,7 +53,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("incorrect poll interval:%v", err)
 	}
-	pp.Params = &app.Params{
+	Preprocessor.Params = &app.Params{
 		BatchSize:    batch,
 		PollInterval: interval,
 		Queue:        os.Getenv("queue_url"),
@@ -63,13 +63,15 @@ func init() {
 
 func handler(ctx context.Context, events events.SQSEvent) error {
 	for _, message := range events.Records {
-		if sqsMessage, err := pp.DecodeSQSMessage(message.Body); err == nil {
-			if err := pp.WriteToKinesisStream(pp.Params.Stream, *sqsMessage); err != nil {
+		if sqsMessage, err := Preprocessor.DecodeSQSMessage(message.Body); err == nil {
+			if err := Preprocessor.WriteToKinesisStream(Preprocessor.Params.Stream,
+				*sqsMessage); err != nil {
 				log.Println(err)
 				continue
 			}
 		}
-		if err := pp.DeleteSQSMessage(pp.Params.Queue, &message.ReceiptHandle); err != nil {
+		if err := Preprocessor.DeleteSQSMessage(Preprocessor.Params.Queue,
+			&message.ReceiptHandle); err != nil {
 			log.Println(err)
 			return err
 		}
@@ -79,8 +81,8 @@ func handler(ctx context.Context, events events.SQSEvent) error {
 
 func main() {
 	if os.Getenv("mode") == modeStandalone {
-		err := pp.PollSQS(pp.Params.Queue, pp.Params.Stream,
-			int64(pp.Params.BatchSize), pp.Params.PollInterval)
+		err := Preprocessor.PollSQS(Preprocessor.Params.Queue, Preprocessor.Params.Stream,
+			int64(Preprocessor.Params.BatchSize), Preprocessor.Params.PollInterval)
 		if err != nil {
 			log.Printf("failed to process messages from SQS:%v", err)
 		}
