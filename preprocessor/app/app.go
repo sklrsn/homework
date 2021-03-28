@@ -137,10 +137,13 @@ func (app *App) DecodeSQSMessage(body string) (*SQSMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Message read from SQS:%v", string(messageBytes))
+
 	var sqsMessage SQSMessage
 	if err := json.Unmarshal(messageBytes, &sqsMessage); err != nil {
 		return nil, err
 	}
+
 	return &sqsMessage, err
 }
 
@@ -173,6 +176,8 @@ func (app *App) WriteToKinesisStream(stream string, sqsMessage SQSMessage) error
 	if err != nil {
 		return err
 	}
+	log.Printf("message written to Kinesis:%v", string(krBytes))
+
 	krWriteOut, err := app.KinesisClient.Write(&kinesis.PutRecordInput{
 		Data:         krBytes,
 		StreamName:   aws.String(stream),
