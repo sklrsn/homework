@@ -92,7 +92,7 @@ func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) 
 					wg.Done()
 				}()
 
-				response, err := app.readSQSMessage(QueueUrl, batchSize)
+				response, err := app.ReadSQSMessage(QueueUrl, batchSize)
 				if err != nil {
 					log.Println(err)
 					return
@@ -117,7 +117,7 @@ func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) 
 	}
 }
 
-func (app *App) readSQSMessage(QueueUrl string, batchSize int64) (*sqs.ReceiveMessageOutput, error) {
+func (app *App) ReadSQSMessage(QueueUrl string, batchSize int64) (*sqs.ReceiveMessageOutput, error) {
 	r := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(QueueUrl),
 		MaxNumberOfMessages: aws.Int64(batchSize),
