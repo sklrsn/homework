@@ -81,8 +81,7 @@ func handler(ctx context.Context, events events.SQSEvent) error {
 
 func main() {
 	if os.Getenv("mode") == modeStandalone {
-		err := Preprocessor.PollSQS(Preprocessor.Params.Queue, Preprocessor.Params.Stream,
-			int64(Preprocessor.Params.BatchSize), Preprocessor.Params.PollInterval)
+		err := Preprocessor.PollSQS(Preprocessor.Params)
 		if err != nil {
 			log.Printf("failed to process messages from SQS:%v", err)
 		}

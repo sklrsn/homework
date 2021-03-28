@@ -76,7 +76,8 @@ func (app *App) Init(creds Credentials) {
 	}
 }
 
-func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) error {
+func (app *App) PollSQS(params *Params) error {
+	interval := params.PollInterval
 	if interval <= 0 {
 		interval = 10
 	}
@@ -92,7 +93,7 @@ func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) 
 					wg.Done()
 				}()
 
-				response, err := app.ReadSQSMessage(QueueUrl, batchSize)
+				response, err := app.ReadSQSMessage(params.Queue, int64(params.BatchSize))
 				if err != nil {
 					log.Println(err)
 					return
@@ -100,12 +101,12 @@ func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) 
 
 				for _, message := range response.Messages {
 					if sqsMessage, err := app.DecodeSQSMessage(*message.Body); err == nil {
-						if err := app.WriteToKinesisStream(stream, *sqsMessage); err != nil {
+						if err := app.WriteToKinesisStream(params.Stream, *sqsMessage); err != nil {
 							log.Println(err)
 							return
 						}
 					}
-					if err := app.DeleteSQSMessage(QueueUrl, message.ReceiptHandle); err != nil {
+					if err := app.DeleteSQSMessage(params.Queue, message.ReceiptHandle); err != nil {
 						log.Println(err)
 						return
 					}
