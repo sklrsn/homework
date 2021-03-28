@@ -96,5 +96,6 @@ func main() {
 		lambda.Start(handler)
 	}
 
-	log.Fatalf("incorrect mode")
+	log.Fatalf("incorrect mode:%v . supported modes -{'standalone', 'serverless'} ",
+		os.Getenv("mode"))
 }
