@@ -1,25 +1,16 @@
 package main
 
 import (
-	"encoding/base64"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/sklrsn/homework/preprocessor/app"
 )
 
-const (
-	QueueUrl   = "http://localhost:4566/000000000000/submissions"
-	StreamName = "events"
-)
-
-func cleanUp() {
+func cleanUp(done chan bool) {
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGKILL)
 
@@ -28,20 +19,12 @@ func cleanUp() {
 		log.Printf("Received signal %v", sig)
 
 		log.Println("exiting ...")
-		os.Exit(0)
+		done <- true
 	}()
 }
 
 func main() {
 	setEnv()
-	fmt.Println("**************")
-	fmt.Println(os.Getenv("end_point"))
-	fmt.Println(os.Getenv("access_key_id"))
-	fmt.Println(os.Getenv("secret_access_key"))
-	fmt.Println(os.Getenv("region"))
-	fmt.Println(os.Getenv("stream_name"))
-	fmt.Println("**************")
-
 	endpoint := os.Getenv("end_point")
 	creds := app.Credentials{
 		AccessKey:       os.Getenv("access_key_id"),
@@ -52,42 +35,23 @@ func main() {
 	pp := new(app.App)
 	pp.Init(creds)
 
-	s := &sqs.SendMessageInput{
-		MessageBody:  aws.String("message body"),
-		QueueUrl:     aws.String(QueueUrl),
-		DelaySeconds: aws.Int64(3),
-	}
-	response, err := pp.SQSClient.Write(s)
+	sqsbatchSize, err := strconv.Atoi(os.Getenv("sqs_messages_batch"))
 	if err != nil {
-		panic(err)
+		log.Fatalf("incorrect input for batch size :%v", err)
 	}
-	fmt.Println(response)
-
-	r := &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String(QueueUrl),
-		MaxNumberOfMessages: aws.Int64(3),
-		VisibilityTimeout:   aws.Int64(30),
-		WaitTimeSeconds:     aws.Int64(20),
-	}
-	receive_resp, err := pp.SQSClient.Read(r)
+	sqsPollInterval, err := strconv.Atoi(os.Getenv("sqs_poll_interval"))
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("incorrect input for SQS poll interval :%v", err)
+	}
+	err = pp.PollSQS(os.Getenv("queue_url"), os.Getenv("stream_name"),
+		int64(sqsbatchSize), sqsPollInterval)
+	if err != nil {
+		log.Printf("failed to process messages from SQS:%v", err)
 	}
 
-	for _, message := range receive_resp.Messages {
-		messageBytes, _ := base64.RawStdEncoding.DecodeString(*message.Body)
-		fmt.Println(string(messageBytes))
-	}
-
-	putOutput, err := pp.KinesisClient.Write(&kinesis.PutRecordInput{
-		Data:         []byte("hoge"),
-		StreamName:   aws.String(os.Getenv("stream_name")),
-		PartitionKey: aws.String("key1"),
-	})
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(putOutput)
+	done := make(chan bool)
+	cleanUp(done)
+	<-done
 }
 
 func setEnv() {
@@ -97,4 +61,6 @@ func setEnv() {
 	os.Setenv("end_point", "http://localhost:4566")
 	os.Setenv("queue_url", "http://localhost:4566/000000000000/submissions")
 	os.Setenv("stream_name", "events")
+	os.Setenv("sqs_messages_batch", "10")
+	os.Setenv("sqs_poll_interval", "10") // in seconds
 }

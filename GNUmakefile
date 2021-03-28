@@ -49,5 +49,3 @@ deploy:
 clean:
 	@rm -rf vendor/
 	@rm -rf preprocessor/dist
-	@docker kill $$(docker ps -aq)
-	@docker rm $$(docker ps -aq)

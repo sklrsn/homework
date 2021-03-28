@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"log"
-	"os"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -60,84 +60,123 @@ func (app *App) Init(creds Credentials) {
 
 	app.SQSClient, err = NewSQSClient(session)
 	if err != nil {
-		log.Fatal("failed to create SQS client")
+		log.Fatalf("failed to create SQS client:%v", err)
 	}
 
 	app.KinesisClient, err = NewKinesisClient(session)
 	if err != nil {
-		log.Fatal("failed to create Kinesis client")
+		log.Fatalf("failed to create Kinesis client:%v", err)
 	}
 }
 
 // TODO: testing purpose only
 // Please use SQS lambda triggers
-func (app *App) PollSQS(QueueUrl string, messageBatchLimit int64) error {
-	ticker := time.NewTicker(time.Duration(10 * time.Second))
+func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) error {
+	if interval <= 0 {
+		interval = 10
+	}
+
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			r := &sqs.ReceiveMessageInput{
-				QueueUrl:            aws.String(QueueUrl),
-				MaxNumberOfMessages: aws.Int64(messageBatchLimit),
-				VisibilityTimeout:   aws.Int64(30),
-				WaitTimeSeconds:     aws.Int64(20),
-			}
-			response, err := app.SQSClient.Read(r)
-			if err != nil {
-				log.Println(err)
-				return err
-			}
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			go func(wg *sync.WaitGroup) {
+				defer func() {
+					wg.Done()
+				}()
 
-			for _, message := range response.Messages {
-				messageBytes, err := base64.RawStdEncoding.DecodeString(*message.Body)
+				response, err := app.readSQSMessage(QueueUrl, batchSize)
 				if err != nil {
 					log.Println(err)
-					return err
-				}
-				var sqsMessage SQSMessage
-				if err := json.Unmarshal(messageBytes, &sqsMessage); err != nil {
-					log.Println(err)
-					return err
+					return
 				}
 
-				id, err := uuid.NewUUID()
-				if err != nil {
-					log.Println(err)
-					return err
+				for _, message := range response.Messages {
+					if sqsMessage, err := app.decodeSQSMessage(*message.Body); err == nil {
+						if err := app.writeToKinesisStream(stream, *sqsMessage); err != nil {
+							log.Println(err)
+							return
+						}
+					}
+					if err := app.deleteSQSMessage(QueueUrl, message.ReceiptHandle); err != nil {
+						log.Println(err)
+						return
+					}
 				}
-				kinesisRecord := KinesisRecord{
-					RecordID:           id.String(),
-					DeviceID:           sqsMessage.DeviceID,
-					Processes:          sqsMessage.Events.Processes,
-					NetworkConnections: sqsMessage.Events.NetworkConnections,
-					Created:            time.Now().UTC().Format(UTC),
-				}
-				krBytes, err := json.Marshal(kinesisRecord)
-				if err != nil {
-					log.Println(err)
-					return err
-				}
-				krWriteOut, err := app.KinesisClient.Write(&kinesis.PutRecordInput{
-					Data:         krBytes,
-					StreamName:   aws.String(os.Getenv("stream_name")),
-					PartitionKey: aws.String("key1"),
-				})
-				if err != nil {
-					log.Println(err)
-					return err
-				}
-				log.Printf("Kinesis write output:%v", krWriteOut)
+			}(&wg)
 
-				sqsDeleteOut, err := app.SQSClient.Delete(&sqs.DeleteMessageInput{
-					QueueUrl:      &QueueUrl,
-					ReceiptHandle: message.ReceiptHandle,
-				})
-				if err != nil {
-					log.Println(err)
-					return err
-				}
-				log.Printf("SQS delete output:%v", sqsDeleteOut)
-			}
+			wg.Wait()
 		}
 	}
+}
+
+func (app *App) readSQSMessage(QueueUrl string, batchSize int64) (*sqs.ReceiveMessageOutput, error) {
+	r := &sqs.ReceiveMessageInput{
+		QueueUrl:            aws.String(QueueUrl),
+		MaxNumberOfMessages: aws.Int64(batchSize),
+		VisibilityTimeout:   aws.Int64(30),
+		WaitTimeSeconds:     aws.Int64(20),
+	}
+	response, err := app.SQSClient.Read(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (app *App) decodeSQSMessage(body string) (*SQSMessage, error) {
+	messageBytes, err := base64.RawStdEncoding.DecodeString(body)
+	if err != nil {
+		return nil, err
+	}
+	var sqsMessage SQSMessage
+	if err := json.Unmarshal(messageBytes, &sqsMessage); err != nil {
+		return nil, err
+	}
+	return &sqsMessage, err
+}
+
+func (app *App) deleteSQSMessage(QueueUrl string, receiptHandle *string) error {
+	sqsDeleteOut, err := app.SQSClient.Delete(&sqs.DeleteMessageInput{
+		QueueUrl:      &QueueUrl,
+		ReceiptHandle: receiptHandle,
+	})
+	if err != nil {
+		return err
+	}
+	log.Printf("SQS delete output:%v", sqsDeleteOut)
+
+	return nil
+}
+
+func (app *App) writeToKinesisStream(stream string, sqsMessage SQSMessage) error {
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return err
+	}
+	kinesisRecord := KinesisRecord{
+		RecordID:           id.String(),
+		DeviceID:           sqsMessage.DeviceID,
+		Processes:          sqsMessage.Events.Processes,
+		NetworkConnections: sqsMessage.Events.NetworkConnections,
+		Created:            time.Now().UTC().Format(UTC),
+	}
+	krBytes, err := json.Marshal(kinesisRecord)
+	if err != nil {
+		return err
+	}
+	krWriteOut, err := app.KinesisClient.Write(&kinesis.PutRecordInput{
+		Data:         krBytes,
+		StreamName:   aws.String(stream),
+		PartitionKey: aws.String("key1"),
+	})
+	if err != nil {
+		return err
+	}
+	log.Printf("Kinesis write output:%v", krWriteOut)
+
+	return nil
 }
