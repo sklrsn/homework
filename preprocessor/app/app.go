@@ -76,8 +76,6 @@ func (app *App) Init(creds Credentials) {
 	}
 }
 
-// TODO: testing purpose only
-// Please use SQS lambda triggers
 func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) error {
 	if interval <= 0 {
 		interval = 10

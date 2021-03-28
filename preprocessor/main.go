@@ -96,15 +96,3 @@ func main() {
 
 	log.Fatalf("incorrect mode")
 }
-
-func setEnvironment() {
-	os.Setenv("access_key_id", "AKIA2RVR24VPMP788U3S")
-	os.Setenv("secret_access_key", "mDOWS+uN7dogVkHDaTuHaoyQ29Ju7pJmsvrrug8o")
-	os.Setenv("region", "eu-west-1")
-	os.Setenv("end_point", "http://localhost:4566")
-	os.Setenv("queue_url", "http://localhost:4566/000000000000/submissions")
-	os.Setenv("stream_name", "events")
-	os.Setenv("sqs_messages_batch", "10")
-	os.Setenv("sqs_poll_interval", "10") // in seconds
-	os.Setenv("mode", "standalone")
-}
