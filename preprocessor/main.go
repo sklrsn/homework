@@ -15,7 +15,6 @@ import (
 
 var (
 	modeStandalone = "standalone"
-	modeServerless = "serverless"
 )
 
 func cleanUp(done chan bool) {
@@ -91,10 +90,5 @@ func main() {
 		<-done
 	}
 
-	if os.Getenv("mode") == modeServerless {
-		lambda.Start(handler)
-	}
-
-	log.Fatalf("incorrect mode:%v . supported modes -{'standalone', 'serverless'} ",
-		os.Getenv("mode"))
+	lambda.Start(handler)
 }
