@@ -34,3 +34,4 @@ services:
       stream_name: events
       sqs_messages_batch: 10
       sqs_poll_interval: 10
+      mode: standalone

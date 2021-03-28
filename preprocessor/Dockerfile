@@ -5,20 +5,13 @@ LABEL Maintainer="Kalai"
 
 RUN go env
 
-RUN mkdir -p /go/src/github.com/sklrsn/homework/preprocessor
-
 WORKDIR /go/src/github.com/sklrsn/homework/preprocessor
 
 COPY . .
 
 RUN go mod vendor -v && \
-    go mod tidy
-
-RUN go build -o dist/linux/amd64/preprocessor .
-
-RUN ls -ltra
-
-RUN ls -ltra dist/linux/amd64/
+    go mod tidy && \
+    go build -o dist/linux/amd64/preprocessor .
 
 FROM builder as app
 

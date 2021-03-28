@@ -49,9 +49,16 @@ func NewAWSSession(creds Credentials) *session.Session {
 	return session
 }
 
+type Params struct {
+	BatchSize    int
+	PollInterval int
+	Queue        string
+	Stream       string
+}
 type App struct {
 	SQSClient     *SQSClient
 	KinesisClient *KinesisClient
+	Params        *Params
 }
 
 func (app *App) Init(creds Credentials) {
@@ -94,13 +101,13 @@ func (app *App) PollSQS(QueueUrl, stream string, batchSize int64, interval int) 
 				}
 
 				for _, message := range response.Messages {
-					if sqsMessage, err := app.decodeSQSMessage(*message.Body); err == nil {
-						if err := app.writeToKinesisStream(stream, *sqsMessage); err != nil {
+					if sqsMessage, err := app.DecodeSQSMessage(*message.Body); err == nil {
+						if err := app.WriteToKinesisStream(stream, *sqsMessage); err != nil {
 							log.Println(err)
 							return
 						}
 					}
-					if err := app.deleteSQSMessage(QueueUrl, message.ReceiptHandle); err != nil {
+					if err := app.DeleteSQSMessage(QueueUrl, message.ReceiptHandle); err != nil {
 						log.Println(err)
 						return
 					}
@@ -127,7 +134,7 @@ func (app *App) readSQSMessage(QueueUrl string, batchSize int64) (*sqs.ReceiveMe
 	return response, nil
 }
 
-func (app *App) decodeSQSMessage(body string) (*SQSMessage, error) {
+func (app *App) DecodeSQSMessage(body string) (*SQSMessage, error) {
 	messageBytes, err := base64.RawStdEncoding.DecodeString(body)
 	if err != nil {
 		return nil, err
@@ -139,7 +146,7 @@ func (app *App) decodeSQSMessage(body string) (*SQSMessage, error) {
 	return &sqsMessage, err
 }
 
-func (app *App) deleteSQSMessage(QueueUrl string, receiptHandle *string) error {
+func (app *App) DeleteSQSMessage(QueueUrl string, receiptHandle *string) error {
 	sqsDeleteOut, err := app.SQSClient.Delete(&sqs.DeleteMessageInput{
 		QueueUrl:      &QueueUrl,
 		ReceiptHandle: receiptHandle,
@@ -152,7 +159,7 @@ func (app *App) deleteSQSMessage(QueueUrl string, receiptHandle *string) error {
 	return nil
 }
 
-func (app *App) writeToKinesisStream(stream string, sqsMessage SQSMessage) error {
+func (app *App) WriteToKinesisStream(stream string, sqsMessage SQSMessage) error {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return err
