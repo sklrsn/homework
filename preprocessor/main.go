@@ -52,11 +52,16 @@ func init() {
 	if err != nil {
 		log.Fatalf("incorrect poll interval:%v", err)
 	}
+	timeout, err := strconv.Atoi(os.Getenv("visibility_timeout"))
+	if err != nil {
+		log.Fatalf("incorrect visibility timeout:%v", err)
+	}
 	Preprocessor.Params = &app.Params{
 		BatchSize:    batch,
 		PollInterval: interval,
 		Queue:        os.Getenv("queue_url"),
 		Stream:       os.Getenv("stream_name"),
+		Timeout:      timeout,
 	}
 }
 

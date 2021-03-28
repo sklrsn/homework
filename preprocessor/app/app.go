@@ -54,6 +54,7 @@ type Params struct {
 	PollInterval int
 	Queue        string
 	Stream       string
+	Timeout      int
 }
 type App struct {
 	SQSClient     *SQSClient
@@ -93,7 +94,7 @@ func (app *App) PollSQS(params *Params) error {
 					wg.Done()
 				}()
 
-				response, err := app.ReadSQSMessage(params.Queue, int64(params.BatchSize))
+				response, err := app.ReadSQSMessage(params.Queue, int64(params.BatchSize), int64(params.Timeout))
 				if err != nil {
 					log.Println(err)
 					return
@@ -118,11 +119,11 @@ func (app *App) PollSQS(params *Params) error {
 	}
 }
 
-func (app *App) ReadSQSMessage(QueueUrl string, batchSize int64) (*sqs.ReceiveMessageOutput, error) {
+func (app *App) ReadSQSMessage(QueueUrl string, batchSize, timeout int64) (*sqs.ReceiveMessageOutput, error) {
 	r := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(QueueUrl),
 		MaxNumberOfMessages: aws.Int64(batchSize),
-		VisibilityTimeout:   aws.Int64(30),
+		VisibilityTimeout:   aws.Int64(timeout),
 		WaitTimeSeconds:     aws.Int64(20),
 	}
 	response, err := app.SQSClient.Read(r)
