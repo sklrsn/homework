@@ -8,6 +8,32 @@
 * docker
 * docker-compose
 ```
+
+docker-compose.yml
+```
+  ....................................
+  ....................................
+  ....................................
+  
+  preprocessor:
+    container_name: "preprocessor"
+    build: preprocessor
+    network_mode: "host"
+    environment:
+      access_key_id: AKIA2RVR24VPMP788U3S
+      secret_access_key: mDOWS+uN7dogVkHDaTuHaoyQ29Ju7pJmsvrrug8o
+      region: eu-west-1
+      end_point: http://localhost:4566
+      queue_url: http://localhost:4566/000000000000/submissions
+      stream_name: events
+      sqs_messages_batch: 10
+      sqs_poll_interval: 10
+      mode: standalone
+
+  ....................................
+  ....................................
+  ....................................
+```
 ## Run the Application
 
 Please follow below steps to run the application in your local environment.
