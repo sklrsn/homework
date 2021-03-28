@@ -1,4 +1,4 @@
-module github.com/sklrsn/homework
+module github.com/sklrsn/homework/preprocessor
 
 go 1.16
 

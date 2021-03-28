@@ -9,16 +9,17 @@ ARCH             = amd64
 export LAMBDA_EXECUTOR = docker
 export TMPDIR=/tmp
 
-.PHONY: all build package localstack env clean
+.PHONY: all compile run env clean
 
-all: deps build package localstack env
+all: run env
 
 deps:
-	@echo "download dependencies ..."
+	@echo "download go dependencies ..."
+	@cd preprocessor && \
 	go mod vendor -v && \
 	go mod tidy
 
-build:
+compile:
 	@echo "compile binaries ..."
 	@cd preprocessor && \
 	GOOS=${DISTRIBUTION} GOARCH=${ARCH} go build -ldflags="-s -w" -o dist/${DISTRIBUTION}/${ARCH}/${EXECUTEABLE_NAME} .
@@ -28,8 +29,8 @@ package:
 	@cd preprocessor/dist/${DISTRIBUTION}/${ARCH} && \
 	zip ${EXECUTEABLE_NAME}.zip ${EXECUTEABLE_NAME}
 
-localstack:
-	@echo "create Localstack environment ..."
+run:
+	@echo "create localstack environment and launch application ..."
 	@echo LAMBDA_EXECUTOR ...$(LAMBDA_EXECUTOR)
 	@echo TMPDIR ...$(TMPDIR)
 	@docker-compose up
@@ -47,5 +48,8 @@ deploy:
 	--role arn:aws:iam::skalai:role/execution_role
 
 clean:
-	@rm -rf vendor/
+	@rm -rf preprocessor/vendor/
 	@rm -rf preprocessor/dist
+	@docker rmi -f homework_preprocessor
+	@docker rmi -f homework_localstack
+	@docker rmi -f homework_sensor-fleet
