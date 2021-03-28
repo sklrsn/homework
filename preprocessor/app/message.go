@@ -3,7 +3,9 @@ package app
 type Message interface {
 	Read()
 	Write()
+	BatchedWrite()
 	Delete()
+	BatchedDelete()
 }
 
 type SQSMessage struct {

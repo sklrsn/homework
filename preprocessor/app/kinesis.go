@@ -32,10 +32,14 @@ func (kc *KinesisClient) Write(record *kinesis.PutRecordInput) (*kinesis.PutReco
 	return kc.kinesisClient.PutRecord(record)
 }
 
-func (kc *KinesisClient) WriteMultipleRecords(records *kinesis.PutRecordsInput) (*kinesis.PutRecordsOutput, error) {
+func (kc *KinesisClient) BatchedWrite(records *kinesis.PutRecordsInput) (*kinesis.PutRecordsOutput, error) {
 	return kc.kinesisClient.PutRecords(records)
 }
 
 func (kc *KinesisClient) Delete() error {
+	return errors.New("Not implemented")
+}
+
+func (kc *KinesisClient) BatchedDelete() error {
 	return errors.New("Not implemented")
 }

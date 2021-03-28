@@ -31,7 +31,14 @@ func (sc *SQSClient) Read(message *sqs.ReceiveMessageInput) (*sqs.ReceiveMessage
 func (sc *SQSClient) Write(message *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
 	return sc.sqs.SendMessage(message)
 }
+func (sc *SQSClient) BatchedWrite() error {
+	return errors.New("Not implemented")
+}
 
-func (sc *SQSClient) Delete(deleteMessage *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
-	return sc.sqs.DeleteMessage(deleteMessage)
+func (sc *SQSClient) Delete(message *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
+	return sc.sqs.DeleteMessage(message)
+}
+
+func (sc *SQSClient) BatchedDelete(message *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
+	return sc.sqs.DeleteMessageBatch(message)
 }
