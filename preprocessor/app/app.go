@@ -102,9 +102,12 @@ func (app *App) PollSQS(params *Params) error {
 
 				for _, message := range response.Messages {
 					if sqsMessage, err := app.DecodeSQSMessage(*message.Body); err == nil {
-						if err := app.WriteToKinesisStream(params.Stream, *sqsMessage); err != nil {
-							log.Println(err)
-							return
+						if sqsMessage != nil &&
+							len(sqsMessage.Events.Processes) > 0 || len(sqsMessage.Events.NetworkConnections) > 0 {
+							if err := app.WriteToKinesisStream(params.Stream, *sqsMessage); err != nil {
+								log.Println(err)
+								return
+							}
 						}
 					}
 					if err := app.DeleteSQSMessage(params.Queue, message.ReceiptHandle); err != nil {

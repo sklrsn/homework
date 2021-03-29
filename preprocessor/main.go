@@ -68,10 +68,13 @@ func init() {
 func handler(ctx context.Context, events events.SQSEvent) error {
 	for _, message := range events.Records {
 		if sqsMessage, err := Preprocessor.DecodeSQSMessage(message.Body); err == nil {
-			if err := Preprocessor.WriteToKinesisStream(Preprocessor.Params.Stream,
-				*sqsMessage); err != nil {
-				log.Println(err)
-				continue
+			if sqsMessage != nil &&
+				len(sqsMessage.Events.Processes) > 0 || len(sqsMessage.Events.NetworkConnections) > 0 {
+				if err := Preprocessor.WriteToKinesisStream(Preprocessor.Params.Stream,
+					*sqsMessage); err != nil {
+					log.Println(err)
+					continue
+				}
 			}
 		}
 		if err := Preprocessor.DeleteSQSMessage(Preprocessor.Params.Queue,
