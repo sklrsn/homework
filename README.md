@@ -194,3 +194,17 @@ aws --endpoint-url=http://localhost:4566 lambda create-event-source-mapping \
     "State": "Enabled",
 ```
 
+### design questions
+
+* How does your application scale and guarantee near-realtime processing when the incoming traffic increases? Where are the possible bottlenecks and how to tackle those?
+
+  The solution which polls SQS on a regular interval won't scale as incoming traffic increases and also application will be running
+  when there are no messages published to the Queue.  An optimal solution would be using serverless (lambda functions).
+
+* What kind of metrics you would collect from the application to get visibility to its througput, performance and health?
+
+  In general, average response time, availability, CPU and Memory usage are metrics helps to improve the applications.
+
+* How would you deploy your application in a real world scenario? What kind of testing, deployment stages or quality gates you would build to ensure a safe production deployment?
+
+  Serverless framework would be beneficial here Which supports deploying lambdas to different stages like dev, stage and production.
