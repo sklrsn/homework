@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/sklrsn/homework/preprocessor/app"
 )
 
@@ -65,25 +66,18 @@ func init() {
 	}
 }
 
-func handler(ctx context.Context, events events.SQSEvent) error {
-	for _, message := range events.Records {
-		if sqsMessage, err := Preprocessor.DecodeSQSMessage(message.Body); err == nil {
-			if sqsMessage != nil &&
-				len(sqsMessage.Events.Processes) > 0 || len(sqsMessage.Events.NetworkConnections) > 0 {
-				if err := Preprocessor.WriteToKinesisStream(Preprocessor.Params.Stream,
-					*sqsMessage); err != nil {
-					log.Println(err)
-					continue
-				}
-			}
+func handler(ctx context.Context, event events.SQSEvent) error {
+	messages := make([]*sqs.Message, 0)
+	for _, record := range event.Records {
+		message := sqs.Message{
+			MessageId:     &record.MessageId,
+			Body:          &record.Body,
+			ReceiptHandle: &record.ReceiptHandle,
 		}
-		if err := Preprocessor.DeleteSQSMessage(Preprocessor.Params.Queue,
-			&message.ReceiptHandle); err != nil {
-			log.Println(err)
-			return err
-		}
+		messages = append(messages, &message)
 	}
-	return nil
+
+	return Preprocessor.ProcessSQSEvent(Preprocessor.Params, messages)
 }
 
 func main() {

@@ -32,9 +32,7 @@ type NetworkConnection struct {
 }
 
 type KinesisRecord struct {
-	RecordID           string              `json:"id"`
-	DeviceID           string              `json:"device_id"`
-	Processes          []Process           `json:"new_process"`
-	NetworkConnections []NetworkConnection `json:"network_connection"`
-	Created            string              `json:"created"`
+	RecordID string       `json:"id"`
+	Data     []SQSMessage `json:"data"`
+	Created  string       `json:"created"`
 }

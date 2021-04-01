@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -17,6 +18,12 @@ import (
 
 const (
 	UTC = "2006-01-02T15:04:05.999999Z"
+)
+
+var (
+	ErrMissingEvents                      = errors.New("SQS event is missing events")
+	ErrMissingProcessAndNetworkConnection = errors.New("SQS event is missing new_process and network_connection")
+	ErrMissingDeviceID                    = errors.New("SQS event is missing device_id")
 )
 
 type Credentials struct {
@@ -100,26 +107,56 @@ func (app *App) PollSQS(params *Params) error {
 					return
 				}
 
-				for _, message := range response.Messages {
-					if sqsMessage, err := app.DecodeSQSMessage(*message.Body); err == nil {
-						if sqsMessage != nil &&
-							len(sqsMessage.Events.Processes) > 0 || len(sqsMessage.Events.NetworkConnections) > 0 {
-							if err := app.WriteToKinesisStream(params.Stream, *sqsMessage); err != nil {
-								log.Println(err)
-								return
-							}
-						}
-					}
-					if err := app.DeleteSQSMessage(params.Queue, message.ReceiptHandle); err != nil {
-						log.Println(err)
-						return
-					}
+				if err := app.ProcessSQSEvent(params, response.Messages); err != nil {
+					log.Println(err)
+					return
 				}
+
 			}(&wg)
 
 			wg.Wait()
 		}
 	}
+}
+
+func (app *App) ProcessSQSEvent(params *Params, messages []*sqs.Message) error {
+	if sqsMessages, err := app.DecodeSQSMessages(messages); err == nil {
+		if err := app.ValidateSQSMessages(sqsMessages); err == nil {
+			err := app.WriteMessagesToKinesisStream(params.Stream, sqsMessages)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		log.Println(err)
+	}
+
+	for _, message := range messages {
+		err := app.DeleteSQSMessage(*message.MessageId, params.Queue, message.ReceiptHandle)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *App) ValidateSQSMessages(messages []SQSMessage) error {
+	if len(messages) == 0 {
+		return ErrMissingEvents
+	}
+
+	for _, message := range messages {
+		if len(message.Events.Processes) == 0 && len(message.Events.NetworkConnections) == 0 {
+			return ErrMissingProcessAndNetworkConnection
+		}
+
+		if len(message.DeviceID) == 0 {
+			return ErrMissingDeviceID
+		}
+	}
+
+	return nil
 }
 
 func (app *App) ReadSQSMessage(QueueUrl string, batchSize, timeout int64) (*sqs.ReceiveMessageOutput, error) {
@@ -137,51 +174,53 @@ func (app *App) ReadSQSMessage(QueueUrl string, batchSize, timeout int64) (*sqs.
 	return response, nil
 }
 
-func (app *App) DecodeSQSMessage(body string) (*SQSMessage, error) {
-	messageBytes, err := base64.RawStdEncoding.DecodeString(body)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("Message read from SQS:%v", string(messageBytes))
+func (app *App) DecodeSQSMessages(messages []*sqs.Message) ([]SQSMessage, error) {
+	response := make([]SQSMessage, 0)
 
-	var sqsMessage SQSMessage
-	if err := json.Unmarshal(messageBytes, &sqsMessage); err != nil {
-		return nil, err
+	for _, message := range messages {
+		messageBytes, err := base64.RawStdEncoding.DecodeString(*message.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		var sqsMessage SQSMessage
+		if err := json.Unmarshal(messageBytes, &sqsMessage); err != nil {
+			return nil, err
+		}
+		response = append(response, sqsMessage)
 	}
 
-	return &sqsMessage, err
+	return response, nil
 }
 
-func (app *App) DeleteSQSMessage(QueueUrl string, receiptHandle *string) error {
-	sqsDeleteOut, err := app.SQSClient.Delete(&sqs.DeleteMessageInput{
+func (app *App) DeleteSQSMessage(messageID, QueueUrl string, receiptHandle *string) error {
+	_, err := app.SQSClient.Delete(&sqs.DeleteMessageInput{
 		QueueUrl:      &QueueUrl,
 		ReceiptHandle: receiptHandle,
 	})
 	if err != nil {
 		return err
 	}
-	log.Printf("SQS delete output:%v", sqsDeleteOut)
+	log.Printf("SQS removed messsageID:%v", messageID)
 
 	return nil
 }
 
-func (app *App) WriteToKinesisStream(stream string, sqsMessage SQSMessage) error {
+func (app *App) WriteMessagesToKinesisStream(stream string, sqsMessage []SQSMessage) error {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return err
 	}
 	kinesisRecord := KinesisRecord{
-		RecordID:           id.String(),
-		DeviceID:           sqsMessage.DeviceID,
-		Processes:          sqsMessage.Events.Processes,
-		NetworkConnections: sqsMessage.Events.NetworkConnections,
-		Created:            time.Now().UTC().Format(UTC),
+		RecordID: id.String(),
+		Data:     sqsMessage,
+		Created:  time.Now().UTC().Format(UTC),
 	}
 	krBytes, err := json.Marshal(kinesisRecord)
 	if err != nil {
 		return err
 	}
-	log.Printf("message written to Kinesis:%v", string(krBytes))
+	log.Printf("record written to Kinesis:%v", string(krBytes))
 
 	krWriteOut, err := app.KinesisClient.Write(&kinesis.PutRecordInput{
 		Data:         krBytes,

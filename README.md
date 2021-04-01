@@ -93,40 +93,61 @@ Outgoing message to Kinesis
 
 ```
 {
-    "id": "770ca48d-8fdc-11eb-bbef-68f72870fc5b",
-    "device_id": "31980191-fa99-4768-8a7b-0e81397ca6ef",
-    "new_process": [{
-        "cmdl": "notepad.exe",
-        "user": "john"
-    }, {
-        "cmdl": "whoami",
-        "user": "admin"
-    }, {
-        "cmdl": "calculator.exe",
-        "user": "john"
-    }],
-    "network_connection": [{
-        "source_ip": "192.168.0.2",
-        "destination_ip": "23.13.252.39",
-        "destination_port": 43696
-    }, {
-        "source_ip": "192.168.0.1",
-        "destination_ip": "142.250.74.110",
-        "destination_port": 46916
-    }, {
-        "source_ip": "192.168.0.2",
-        "destination_ip": "23.13.252.39",
-        "destination_port": 58976
-    }, {
-        "source_ip": "192.168.0.2",
-        "destination_ip": "23.13.252.39",
-        "destination_port": 5817
-    }, {
-        "source_ip": "192.168.0.1",
-        "destination_ip": "142.250.74.110",
-        "destination_port": 28512
-    }],
-    "created": "2021-03-28T15:44:21.782645Z"
+   "id":"41a5a878-931c-11eb-b9bf-68f72870fc5b",
+   "data":[
+      {
+         "submission_id":"db1634b3-24bc-423f-a4b0-954aeb295b8b",
+         "device_id":"bc74be30-d9df-4cb2-b95a-37fcd125dd27",
+         "time_created":"2021-04-01T18:58:33.371359",
+         "events":{
+            "new_process":[
+               {
+                  "cmdl":"notepad.exe",
+                  "user":"john"
+               },
+               {
+                  "cmdl":"calculator.exe",
+                  "user":"admin"
+               },
+               {
+                  "cmdl":"calculator.exe",
+                  "user":"john"
+               },
+               {
+                  "cmdl":"notepad.exe",
+                  "user":"john"
+               },
+               {
+                  "cmdl":"notepad.exe",
+                  "user":"john"
+               }
+            ],
+            "network_connection":[
+               {
+                  "source_ip":"192.168.0.2",
+                  "destination_ip":"23.13.252.39",
+                  "destination_port":27058
+               },
+               {
+                  "source_ip":"192.168.0.2",
+                  "destination_ip":"23.13.252.39",
+                  "destination_port":55473
+               },
+               {
+                  "source_ip":"192.168.0.1",
+                  "destination_ip":"142.250.74.110",
+                  "destination_port":8285
+               },
+               {
+                  "source_ip":"192.168.0.1",
+                  "destination_ip":"23.13.252.39",
+                  "destination_port":61187
+               }
+            ]
+         }
+      }
+   ],
+   "created":"2021-04-01T18:58:33.467507Z"
 }
 ```
 
